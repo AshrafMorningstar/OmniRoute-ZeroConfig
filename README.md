@@ -65,7 +65,35 @@ Or run:
 python omniroute_zeroconfig.py --test
 ```
 
-### 3. Push to GitHub
+### 3. Global Windows CLI Commands
+Run any of the following directly from PowerShell, CMD, or VS Code / Antigravity terminal:
+
+```powershell
+# Universal Zero-Click Setup (Configures all 14 agents instantly)
+omniroute setup-all
+
+# Specific Agent Setup Commands
+omniroute setup-antigravity    # Antigravity IDE & Extensions (Cline, Roo, Kilo)
+omniroute setup-aider          # Aider terminal pair-programmer
+omniroute setup-opencode       # OpenCode CLI
+omniroute setup-goose          # Block Goose agent
+omniroute setup-crush          # Charm Crush CLI
+omniroute setup-qwen           # Qwen coding CLI
+omniroute setup-kilo           # Kilo Code extension & CLI
+omniroute setup-roo            # Roo Code extension
+omniroute setup-codex          # OpenAI Codex CLI profiles (~/.codex)
+omniroute setup-claude         # Anthropic Claude Code launch profiles
+omniroute setup-cline          # Cline agent extension
+omniroute setup-continue       # Continue VS Code / JetBrains extension
+omniroute setup-cursor         # Cursor editor
+
+# Model Benchmark & Selection
+omniroute test                 # Test and benchmark all auto models live
+omniroute select-model         # Interactive menu to pick primary model
+omniroute models               # List all available virtual models
+```
+
+### 4. Push to GitHub
 ```bat
 PUSH_TO_GITHUB.bat
 ```
