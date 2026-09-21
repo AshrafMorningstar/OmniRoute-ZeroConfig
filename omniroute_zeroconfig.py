@@ -213,12 +213,20 @@ def configure_environment(selected_model: str = DEFAULT_MODEL):
         "OMNIROUTE_KEY":      ADMIN_KEY,
         "OMNIROUTE_MODEL":    selected_model,
     }
-    for k, v in env_vars.items():
-        try:
-            subprocess.run(["setx", k, v], capture_output=True, text=True, timeout=5)
+    try:
+        import winreg
+        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, "Environment", 0, winreg.KEY_SET_VALUE)
+        for k, v in env_vars.items():
+            winreg.SetValueEx(key, k, 0, winreg.REG_SZ, v)
             log("ENV", k, v[:40] + ("..." if len(v) > 40 else ""), ok=True)
-        except Exception as e:
-            log("ENV", k, str(e), ok=False)
+        winreg.CloseKey(key)
+    except Exception as e:
+        for k, v in env_vars.items():
+            try:
+                subprocess.run(["setx", k, v], capture_output=True, text=True, timeout=10)
+                log("ENV", k, v[:40] + ("..." if len(v) > 40 else ""), ok=True)
+            except Exception as ex:
+                log("ENV", k, str(ex), ok=False)
 
     ps_profile = os.path.join(USER_HOME, "Documents", "WindowsPowerShell", "Microsoft.PowerShell_profile.ps1")
     marker     = "# === OmniRoute ZeroConfig ==="

@@ -391,6 +391,53 @@ def setup_vscode_all(model: str = DEFAULT_MODEL):
         except Exception as e:
             status_msg(name, str(e), ok=False)
 
+def configure_environment(model: str = DEFAULT_MODEL):
+    print("\n[CONFIGURING] Windows System Environment Variables & PowerShell Profile...")
+    env_vars = {
+        "ANTHROPIC_BASE_URL": OMNIROUTE_V1,
+        "ANTHROPIC_API_KEY":  INFERENCE_KEY,
+        "OPENAI_BASE_URL":    OMNIROUTE_V1,
+        "OPENAI_API_KEY":     INFERENCE_KEY,
+        "OMNIROUTE_URL":      OMNIROUTE_HOST,
+        "OMNIROUTE_KEY":      ADMIN_KEY,
+        "OMNIROUTE_MODEL":    model,
+    }
+    try:
+        import winreg
+        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, "Environment", 0, winreg.KEY_SET_VALUE)
+        for k, v in env_vars.items():
+            winreg.SetValueEx(key, k, 0, winreg.REG_SZ, v)
+        winreg.CloseKey(key)
+        status_msg("Environment", "HKCU\\Environment updated")
+    except Exception as e:
+        status_msg("Environment", str(e), ok=False)
+
+    ps_profile = os.path.join(USER_HOME, "Documents", "WindowsPowerShell", "Microsoft.PowerShell_profile.ps1")
+    marker     = "# === OmniRoute ZeroConfig ==="
+    block = (
+        f"\n{marker}\n"
+        f'$env:ANTHROPIC_BASE_URL = "{OMNIROUTE_V1}"\n'
+        f'$env:ANTHROPIC_API_KEY  = "{INFERENCE_KEY}"\n'
+        f'$env:OPENAI_BASE_URL    = "{OMNIROUTE_V1}"\n'
+        f'$env:OPENAI_API_KEY     = "{INFERENCE_KEY}"\n'
+        f'$env:OMNIROUTE_URL      = "{OMNIROUTE_HOST}"\n'
+        f'$env:OMNIROUTE_KEY      = "{ADMIN_KEY}"\n'
+        f'$env:OMNIROUTE_MODEL    = "{model}"\n'
+        f"# === End OmniRoute ===\n"
+    )
+    try:
+        os.makedirs(os.path.dirname(ps_profile), exist_ok=True)
+        existing = ""
+        if os.path.exists(ps_profile):
+            with open(ps_profile, "r", encoding="utf-8") as f:
+                existing = f.read()
+        if marker not in existing:
+            with open(ps_profile, "a", encoding="utf-8") as f:
+                f.write(block)
+        status_msg("PowerShell Profile", ps_profile)
+    except Exception as e:
+        status_msg("PowerShell Profile", str(e), ok=False)
+
 def setup_all(model: str = DEFAULT_MODEL):
     print(f"\n============================================================")
     print(f"  OmniRoute Zero-Click Universal Setup (Model: {model})")
@@ -409,7 +456,8 @@ def setup_all(model: str = DEFAULT_MODEL):
     setup_continue(model)
     setup_cursor(model)
     setup_vscode_all(model)
-    print(f"\n[DONE] All 14 IDEs, Agents, & CLIs configured to use OmniRoute!")
+    configure_environment(model)
+    print(f"\n[DONE] All 15 IDEs, Agents, & CLIs configured to use OmniRoute!")
 
 # ── Model Diagnostics & Benchmark ────────────────────────────────────────────
 
