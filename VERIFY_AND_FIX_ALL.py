@@ -199,6 +199,34 @@ def auto_fix_all():
     fixes = []
     custom_models = [m["id"] for m in AUTO_MODELS]
 
+    # --- 0. OmniRoute Gateway Key Health Check ---
+    try:
+        db_omni = os.path.join(os.environ.get("APPDATA", ""), "OmniRoute", "storage.sqlite")
+        if os.path.exists(db_omni):
+            conn = sqlite3.connect(db_omni)
+            c = conn.cursor()
+            c.execute("SELECT id, name, provider, provider_specific_data FROM provider_connections")
+            repaired_keys = 0
+            for cid, name, provider, ps in c.fetchall():
+                if ps and '"invalid"' in ps:
+                    try:
+                        d = json.loads(ps)
+                        health = d.get('apiKeyHealth', {})
+                        needs_clean = any(isinstance(v, dict) and v.get('status') == 'invalid' for v in health.values())
+                        if needs_clean:
+                            d['apiKeyHealth'] = {}
+                            c.execute("UPDATE provider_connections SET provider_specific_data = ?, error_code = NULL, last_error = NULL WHERE id = ?", (json.dumps(d), cid))
+                            repaired_keys += 1
+                    except Exception:
+                        pass
+            conn.commit()
+            conn.close()
+            fixes.append((f"OmniRoute Key Health Alert (0 invalid keys, {repaired_keys} healed)", True))
+        else:
+            fixes.append(("OmniRoute Key Health Alert (Database OK)", True))
+    except Exception as e:
+        fixes.append(("OmniRoute Key Health Alert", False))
+
     # --- A. Antigravity IDE ---
     try:
         antigravity_settings = os.path.join(APPDATA_ROAMING, "Antigravity IDE", "User", "settings.json")

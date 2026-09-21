@@ -51,9 +51,31 @@ Or run via terminal:
 ```powershell
 python VERIFY_AND_FIX_ALL.py
 ```
-*This performs end-to-end testing of the OmniRoute gateway daemon, tests live completions, patches SQLite extension state (bypassing Cline's browser login lock and setting up Roo/Kilo), and repairs all 15 IDE and agent configurations in seconds.*
+*This performs end-to-end testing of the OmniRoute gateway daemon, auto-repairs any invalid key health alerts, tests live completions, patches SQLite extension state (bypassing Cline's browser login lock and setting up Roo/Kilo), and repairs all 15 IDE and agent configurations in seconds.*
 
-### 2. Universal Setup
+### 2. OmniRoute API Key Health Auto-Repair
+Double-click:
+```bat
+FIX_API_KEYS.bat
+```
+Or run:
+```powershell
+python repair_omniroute_keys.py
+```
+*Instantly fixes the "15 API key(s) marked as invalid" alert in OmniRoute by migrating valid OpenRouter keys to provider 'openrouter', re-homing AgentRouter keys, and purging defunct placeholders.* Full guide: [TUTORIAL_API_KEY_HEALTH_FIX.md](file:///e:/AS%20Projects/OmniRoute-ZeroConfig/TUTORIAL_API_KEY_HEALTH_FIX.md).
+
+### 3. Master Control Center & Model Selector
+Double-click:
+```bat
+OMNIROUTE_CONTROL_CENTER.bat
+```
+Or run:
+```powershell
+python OMNIROUTE_CONTROL_CENTER.py
+```
+*Interactive selector to assign any model to any agent, run live benchmarks, or execute auto-repair.*
+
+### 4. Universal Setup
 Double-click:
 ```bat
 SETUP_ALL_IDES.bat
