@@ -623,9 +623,23 @@ def select_model_menu():
 
 def main():
     if len(sys.argv) < 2:
-        print("OmniRoute Multi-Agent Universal CLI")
+        print("OmniRoute Multi-Agent & Gateway CLI")
         print("Usage: omniroute <command> [options]\n")
-        print("Agent Setup Commands:")
+        print("OmniRoute Gateway Engine Commands:")
+        print("  omniroute status              - Show OmniRoute status & CLI tools")
+        print("  omniroute health              - Check gateway health & uptime")
+        print("  omniroute serve               - Start the OmniRoute local server")
+        print("  omniroute dashboard           - Open the web dashboard in browser")
+        print("  omniroute doctor              - Run OmniRoute Doctor diagnostics")
+        print("  omniroute providers           - Manage provider connections")
+        print("\nAgent Auto-Config Commands:")
+        print("  omniroute setup-all           - Configure ALL agents zero-click")
+        print("  omniroute setup-antigravity   - Configure Antigravity IDE")
+        print("  omniroute setup-claude        - Configure Claude Code CLI")
+        print("  omniroute setup-codex         - Configure OpenAI Codex CLI profiles")
+        print("  omniroute setup-cline         - Configure Cline VS Code / Antigravity")
+        print("  omniroute setup-continue      - Configure Continue extension")
+        print("  omniroute setup-cursor        - Configure Cursor editor")
         print("  omniroute setup-aider         - Configure Aider")
         print("  omniroute setup-opencode      - Configure OpenCode CLI")
         print("  omniroute setup-goose         - Configure Goose (Block AI agent)")
@@ -633,17 +647,11 @@ def main():
         print("  omniroute setup-qwen          - Configure Qwen Code CLI")
         print("  omniroute setup-kilo          - Configure Kilo Code extension")
         print("  omniroute setup-roo           - Configure Roo Code extension")
-        print("  omniroute setup-codex         - Configure OpenAI Codex CLI profiles")
-        print("  omniroute setup-claude        - Configure Claude Code CLI")
-        print("  omniroute setup-cline         - Configure Cline VS Code / Antigravity")
-        print("  omniroute setup-continue      - Configure Continue extension")
-        print("  omniroute setup-cursor        - Configure Cursor editor")
-        print("  omniroute setup-antigravity   - Configure Antigravity IDE")
-        print("  omniroute setup-all           - Configure ALL agents zero-click")
         print("\nManagement Commands:")
         print("  omniroute test                - Test and benchmark all auto models")
         print("  omniroute select-model        - Interactive menu to pick primary model")
         print("  omniroute models              - List all available virtual models")
+        print("\nRun 'omniroute --help' for full upstream engine commands.")
         return
 
     cmd = sys.argv[1].lower().strip()
@@ -677,7 +685,20 @@ def main():
     if handler:
         handler()
     else:
-        print(f"Unknown command: '{cmd}'. Run 'omniroute' to view available commands.")
+        npm_cli = os.path.join(os.environ.get("APPDATA", ""), "npm", "node_modules", "omniroute", "bin", "omniroute.mjs")
+        node_exe = r"C:\Program Files\nodejs\node.exe"
+        if not os.path.exists(node_exe):
+            node_exe = "node"
+        if os.path.exists(npm_cli):
+            env = os.environ.copy()
+            env["PATH"] = r"C:\Program Files\nodejs;" + env.get("PATH", "")
+            try:
+                res = subprocess.run([node_exe, npm_cli] + sys.argv[1:], env=env)
+                sys.exit(res.returncode)
+            except Exception as ex:
+                print(f"Failed to execute upstream OmniRoute: {ex}")
+        else:
+            print(f"Unknown command: '{cmd}'. Run 'omniroute' to view available commands.")
 
 if __name__ == "__main__":
     main()
