@@ -323,21 +323,38 @@ def auto_fix_all():
 
     # --- D. Kilo Code Extension ---
     try:
-        kilo_dir = os.path.join(USER_HOME, ".local", "share", "kilo")
-        kilo_auth = os.path.join(kilo_dir, "auth.json")
+        kilo_auth_dir = os.path.join(USER_HOME, ".local", "share", "kilo")
+        os.makedirs(kilo_auth_dir, exist_ok=True)
+        kilo_auth = os.path.join(kilo_auth_dir, "auth.json")
         merge_json(kilo_auth, {
-            "openai-compatible": {
-                "apiKey": INFERENCE_KEY,
-                "baseUrl": OMNIROUTE_V1,
-                "model": DEFAULT_MODEL
+            "omniroute": {
+                "type": "api",
+                "key": INFERENCE_KEY
             }
         })
-        merge_json(os.path.join(USER_HOME, ".config", "kilo", "config.json"), {
-            "provider": "openai-compatible",
-            "model": DEFAULT_MODEL,
-            "apiKey": INFERENCE_KEY,
-            "baseUrl": OMNIROUTE_V1
-        })
+        kilo_cfg_dir = os.path.join(USER_HOME, ".config", "kilo")
+        os.makedirs(kilo_cfg_dir, exist_ok=True)
+        kilo_cfg = os.path.join(kilo_cfg_dir, "config.json")
+        kilo_models_dict = {}
+        for item in AUTO_MODELS:
+            kilo_models_dict[item["id"]] = {"name": item["name"]}
+        with open(kilo_cfg, "w", encoding="utf-8") as f:
+            json.dump({
+                "$schema": "https://app.kilo.ai/config.json",
+                "model": "omniroute/" + DEFAULT_MODEL,
+                "small_model": "omniroute/auto/fast",
+                "provider": {
+                    "omniroute": {
+                        "npm": "@ai-sdk/openai-compatible",
+                        "name": "OmniRoute",
+                        "options": {
+                            "baseURL": OMNIROUTE_V1,
+                            "apiKey": INFERENCE_KEY
+                        },
+                        "models": kilo_models_dict
+                    }
+                }
+            }, f, indent=2)
         patch_sqlite_state("kilocode.kilo-code", {
             "kilo.autocomplete.defaultClearMigrationV1": True,
             "kilo.dismissedNotificationIds": ["kilo.local.opencode-config-detected"]
