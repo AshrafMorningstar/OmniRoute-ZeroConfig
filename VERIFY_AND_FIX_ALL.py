@@ -125,9 +125,15 @@ def restart_omniroute_if_needed():
     if os.path.exists(EXE_PATH):
         print(f"  [{C_YELLOW}HEALING{C_RESET}] Automatically restarting OmniRoute desktop daemon...")
         try:
-            subprocess.run(["powershell", "-NoProfile", "-Command", "Stop-Process -Name 'OmniRoute' -Force -ErrorAction SilentlyContinue"], capture_output=True)
+            clean_cmd = (
+                "Stop-Process -Name 'OmniRoute' -Force -ErrorAction SilentlyContinue; "
+                "$base = \"$env:APPDATA\\omniroute-desktop\"; "
+                "@('GPUCache', 'DawnGraphiteCache', 'DawnWebGPUCache', 'lockfile') | ForEach-Object { "
+                "$p = Join-Path $base $_; if (Test-Path $p) { Remove-Item -Path $p -Recurse -Force -ErrorAction SilentlyContinue } }"
+            )
+            subprocess.run(["powershell", "-NoProfile", "-Command", clean_cmd], capture_output=True)
             time.sleep(1)
-            subprocess.Popen([EXE_PATH], shell=True)
+            subprocess.Popen([EXE_PATH, "--disable-gpu"])
             time.sleep(3)
             return True
         except Exception as err:
