@@ -42,9 +42,18 @@ Running `SETUP_ALL_IDES.bat` automatically injects the exact `auto` model catalo
 
 ---
 
-## 🛠️ Usage
+### 1. One-Click Master Diagnostics & Self-Healing Fix
+Double-click:
+```bat
+RUN_VERIFY.bat
+```
+Or run via terminal:
+```powershell
+python VERIFY_AND_FIX_ALL.py
+```
+*This performs end-to-end testing of the OmniRoute gateway daemon, tests live completions, patches SQLite extension state (bypassing Cline's browser login lock and setting up Roo/Kilo), and repairs all 15 IDE and agent configurations in seconds.*
 
-### 1. One-Click Automated Setup
+### 2. Universal Setup
 Double-click:
 ```bat
 SETUP_ALL_IDES.bat
@@ -55,7 +64,7 @@ python omniroute_zeroconfig.py --auto
 ```
 *This benchmarks all available models, selects the fastest working route, and configures all IDEs instantly.*
 
-### 2. Live Diagnostic Testing
+### 3. Live Benchmark Testing
 Double-click:
 ```bat
 TEST_AUTO_MODELS.bat
@@ -65,10 +74,13 @@ Or run:
 python omniroute_zeroconfig.py --test
 ```
 
-### 3. Global Windows CLI Commands
+### 4. Global Windows CLI Commands
 Run any of the following directly from PowerShell, CMD, or VS Code / Antigravity terminal:
 
 ```powershell
+# Universal Diagnostics & Self-Healing Fix
+python VERIFY_AND_FIX_ALL.py
+
 # Universal Zero-Click Setup (Configures all 14 agents instantly)
 omniroute setup-all
 

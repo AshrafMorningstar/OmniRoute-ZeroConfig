@@ -72,6 +72,35 @@ def merge_json(path: str, data: dict):
     with open(path, "w", encoding="utf-8") as f:
         json.dump(existing, f, indent=2)
 
+def patch_vscode_sqlite(ext_key: str, patch_dict: dict) -> int:
+    ide_paths = [
+        os.path.join(APPDATA_ROAMING, "Antigravity IDE", "User", "globalStorage", "state.vscdb"),
+        os.path.join(APPDATA_ROAMING, "Code", "User", "globalStorage", "state.vscdb"),
+        os.path.join(APPDATA_ROAMING, "Code - Insiders", "User", "globalStorage", "state.vscdb"),
+        os.path.join(APPDATA_ROAMING, "Cursor", "User", "globalStorage", "state.vscdb"),
+        os.path.join(APPDATA_ROAMING, "VSCodium", "User", "globalStorage", "state.vscdb"),
+        os.path.join(APPDATA_ROAMING, "Windsurf", "User", "globalStorage", "state.vscdb"),
+    ]
+    patched = 0
+    import sqlite3
+    for db_path in ide_paths:
+        if not os.path.exists(db_path):
+            continue
+        try:
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
+            cursor.execute("SELECT value FROM ItemTable WHERE key = ?", (ext_key,))
+            row = cursor.fetchone()
+            curr = json.loads(row[0]) if row and row[0] else {}
+            curr.update(patch_dict)
+            cursor.execute("INSERT OR REPLACE INTO ItemTable (key, value) VALUES (?, ?)", (ext_key, json.dumps(curr)))
+            conn.commit()
+            conn.close()
+            patched += 1
+        except Exception:
+            pass
+    return patched
+
 def status_msg(agent: str, target: str, ok: bool = True):
     tag = "[OK] " if ok else "[ERR]"
     print(f"  {tag} [{agent}] -> {target}", flush=True)
@@ -94,6 +123,8 @@ def setup_antigravity(model: str = DEFAULT_MODEL):
             "kilocode.openAiApiKey": INFERENCE_KEY,
             "kilocode.openAiBaseUrl": OMNIROUTE_V1,
             "kilocode.openAiModelId": model,
+            "kilo-code.new.model.providerID": "openai-compatible",
+            "kilo-code.new.model.modelID": model,
             "cline.openAiBaseUrl": OMNIROUTE_HOST,
             "cline.openAiApiKey": INFERENCE_KEY,
             "cline.openAiModelId": model,
@@ -187,18 +218,34 @@ def setup_cline(model: str = DEFAULT_MODEL):
     print("\n[CONFIGURING] Cline (VS Code / Antigravity Extension & CLI)...")
     cline_dir = os.path.join(USER_HOME, ".cline", "data")
     os.makedirs(cline_dir, exist_ok=True)
+    cline_patch = {
+        "welcomeViewCompleted": True,
+        "isNewUser": False,
+        "apiProvider": "openai",
+        "openAiBaseUrl": OMNIROUTE_HOST,
+        "openAiApiKey": INFERENCE_KEY,
+        "openAiModelId": model,
+        "planModeApiProvider": "openai",
+        "planModeOpenAiModelId": model,
+        "actModeApiProvider": "openai",
+        "actModeOpenAiModelId": model,
+        "cline.rollout.bundle": "next",
+        "mcpMarketplaceEnabled": True,
+        "openAiCustomModelInfo": {
+            "maxTokens": 8192,
+            "contextWindow": 128000,
+            "supportsImages": True,
+            "supportsComputerUse": True,
+            "supportsPromptCache": True
+        }
+    }
     try:
-        merge_json(os.path.join(cline_dir, "globalState.json"), {
-            "actModeApiProvider": "openai",
-            "planModeApiProvider": "openai",
-            "openAiBaseUrl": OMNIROUTE_HOST,
-            "openAiModelId": model,
-            "planModeOpenAiModelId": model,
-        })
+        merge_json(os.path.join(cline_dir, "globalState.json"), cline_patch)
         merge_json(os.path.join(cline_dir, "secrets.json"), {
             "openAiApiKey": INFERENCE_KEY
         })
-        status_msg("Cline Data", cline_dir)
+        patched = patch_vscode_sqlite("saoudrizwan.claude-dev", cline_patch)
+        status_msg("Cline Data", f"{cline_dir} (State + {patched} IDE DBs unlocked)")
     except Exception as e:
         status_msg("Cline Data", str(e), ok=False)
 
@@ -207,6 +254,15 @@ def setup_roo(model: str = DEFAULT_MODEL):
     roo_dir = os.path.join(USER_HOME, ".roo")
     os.makedirs(roo_dir, exist_ok=True)
     roo_file = os.path.join(roo_dir, "omniroute-roo-settings.json")
+    roo_patch = {
+        "welcomeViewCompleted": True,
+        "isNewUser": False,
+        "apiProvider": "openai",
+        "openAiBaseUrl": OMNIROUTE_V1,
+        "openAiApiKey": INFERENCE_KEY,
+        "openAiModelId": model,
+        "openAiCustomModelInfo": {"maxTokens": 8192, "contextWindow": 128000, "supportsImages": True, "supportsPromptCache": True}
+    }
     try:
         merge_json(roo_file, {
             "providerProfiles": {
@@ -222,7 +278,8 @@ def setup_roo(model: str = DEFAULT_MODEL):
                 }
             }
         })
-        status_msg("Roo Code", roo_file)
+        patched = patch_vscode_sqlite("RooVeterinaryInc.roo-cline", roo_patch)
+        status_msg("Roo Code", f"{roo_file} ({patched} IDE DBs patched)")
     except Exception as e:
         status_msg("Roo Code", str(e), ok=False)
 
@@ -238,6 +295,16 @@ def setup_kilo(model: str = DEFAULT_MODEL):
                 "baseUrl": OMNIROUTE_V1,
                 "model": model
             }
+        })
+        merge_json(os.path.join(USER_HOME, ".config", "kilo", "config.json"), {
+            "provider": "openai-compatible",
+            "model": model,
+            "apiKey": INFERENCE_KEY,
+            "baseUrl": OMNIROUTE_V1
+        })
+        patch_vscode_sqlite("kilocode.kilo-code", {
+            "kilo.autocomplete.defaultClearMigrationV1": True,
+            "kilo.dismissedNotificationIds": ["kilo.local.opencode-config-detected"]
         })
         status_msg("Kilo Code", kilo_auth)
     except Exception as e:
